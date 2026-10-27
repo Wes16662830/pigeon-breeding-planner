@@ -1,4 +1,11 @@
-# OudeLuck Pedigree Builder
+# OudeLuck Breeding Planner
+
+A separate project from the OudeLuck Pedigree Builder: it started from that
+codebase and adds spreadsheet import, per-bird breeding/performance markers
+and a pairing planner. It deploys as its **own** Cloudflare Worker, D1
+database and R2 bucket (`oudeluck-breeding-planner` /
+`oudeluck-breeding-uploads`), so deploying it never touches the Pedigree
+Builder's site or data.
 
 Local tool for OudeLuck Lofts (OneLoft Genetics), Athlone Farm, Tarkastad,
 Eastern Cape. Upload two parent pedigrees — any loft, any format, image or
@@ -252,12 +259,13 @@ commit for it.
 ```bash
 npx wrangler login                      # opens a browser to authorize wrangler
 
-npx wrangler d1 create oudeluck-pedigree-builder
+npx wrangler d1 create oudeluck-breeding-planner
 # -> copy the printed database_id into wrangler.toml's [[d1_databases]] block
 
-npx wrangler r2 bucket create oudeluck-pedigree-uploads
+npx wrangler r2 bucket create oudeluck-breeding-uploads
 
-npm run db:migrate:remote               # applies schema.sql to the D1 database
+npm run db:migrate:remote               # creates every table/column on the new D1 database
+                                         # (0001 + the 0003/0004/0005 updates, in order)
 npm run db:seed:remote                  # optional — same sample pedigrees as
                                          # npm run db:seed, on the live database,
                                          # so there's something to click through

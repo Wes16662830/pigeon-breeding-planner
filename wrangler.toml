@@ -5,10 +5,10 @@
 # One-time setup before the first `wrangler deploy` — see README's
 # "Hosting on Cloudflare" section for the full walkthrough:
 #   1. wrangler login
-#   2. wrangler d1 create oudeluck-pedigree-builder   -> paste the printed
+#   2. wrangler d1 create oudeluck-breeding-planner   -> paste the printed
 #      database_id below
-#   3. wrangler r2 bucket create oudeluck-pedigree-uploads
-#   4. wrangler d1 execute oudeluck-pedigree-builder --remote --file=./migrations/0001_init.sql
+#   3. wrangler r2 bucket create oudeluck-breeding-uploads
+#   4. wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0001_init.sql
 #   5. npm run build && wrangler deploy
 #   6. In the Cloudflare dashboard: Zero Trust -> Access -> Applications ->
 #      add this Worker's route, restrict to your own email. This is what
@@ -17,7 +17,7 @@
 #      Anthropic API key. No `wrangler secret put` needed for this —
 #      see the ANTHROPIC_API_KEY note at the bottom of this file.
 
-name = "oudeluck-pedigree-builder"
+name = "oudeluck-breeding-planner"
 main = "worker/index.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
@@ -30,12 +30,12 @@ run_worker_first = ["/api/*", "/uploads/*"]
 
 [[d1_databases]]
 binding = "DB"
-database_name = "oudeluck-pedigree-builder"
+database_name = "oudeluck-breeding-planner"
 database_id = "REPLACE_WITH_D1_DATABASE_ID" # from `wrangler d1 create` output
 
 [[r2_buckets]]
 binding = "UPLOADS"
-bucket_name = "oudeluck-pedigree-uploads"
+bucket_name = "oudeluck-breeding-uploads"
 
 # Optional model overrides (non-secret) — uncomment to pin a specific model
 # instead of the code's default ("claude-opus-5").
