@@ -1,9 +1,10 @@
 // Thin fetch wrapper over the Express proxy. The frontend never talks to
 // Anthropic directly and never sees an API key (build brief §3/§8).
 
-import type { Bird, CrossReferenceReport, ExtractedPedigree, InbreedingResult, PedigreeProse, Result } from '../../shared/types';
+import type { Bird, Pairing, CrossReferenceReport, ExtractedPedigree, InbreedingResult, PedigreeProse, Result } from '../../shared/types';
 import type { BackupFile, RestoreSummary } from '../../shared/backup';
 import type { ImportRow } from '../../shared/importBirds';
+import type { YoungsterInput } from '../../shared/breedingRecord';
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -67,6 +68,26 @@ export interface ImportResult {
 
 export function importBirdRows(fileName: string, rows: ImportRow[]): Promise<ImportResult> {
   return api('/import/birds', { method: 'POST', body: JSON.stringify({ fileName, rows }) });
+}
+
+export function getPairings(): Promise<Pairing[]> {
+  return api('/pairings');
+}
+
+export function createPairing(p: Omit<Pairing, 'id' | 'createdAt' | 'updatedAt'>): Promise<Pairing> {
+  return api('/pairings', { method: 'POST', body: JSON.stringify(p) });
+}
+
+export function updatePairing(id: string, patch: Partial<Pick<Pairing, 'status' | 'pairedOn' | 'notes' | 'season'>>): Promise<Pairing> {
+  return api(`/pairings/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+}
+
+export function deletePairing(id: string): Promise<void> {
+  return api(`/pairings/${id}`, { method: 'DELETE' });
+}
+
+export function addYoungster(pairingId: string, y: YoungsterInput): Promise<Bird> {
+  return api(`/pairings/${pairingId}/youngsters`, { method: 'POST', body: JSON.stringify(y) });
 }
 
 export function getAllBirds(): Promise<Bird[]> {

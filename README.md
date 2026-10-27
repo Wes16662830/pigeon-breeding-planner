@@ -139,6 +139,28 @@ upload 2 files → vision extract → HUMAN VERIFY → merge into child → rend
     Existing Cloudflare deployments need the column added once:
     `npm run db:migrate:0005:remote` (the local server migrates itself).
 
+11. **Breeding record** (Breeding Record tab, `shared/breedingRecord.ts`,
+    `pairings` table) — record each pairing made (cock, hen, season, date,
+    status), add its youngsters by ring, and enter their race results. Or
+    use **Record this pairing** in the Pairing Planner, which also stores
+    the planner's prediction at that moment.
+    - Youngsters aren't stored on the pairing: any bird whose sire and dam
+      are that cock and hen counts, however it was entered (here, a merged
+      sheet, a spreadsheet import), matched by ring. When the same pair is
+      used in several seasons, a youngster goes to the season matching the
+      year in its ring; no readable year → the latest season.
+    - Adding a youngster is refused if its ring year doesn't match the
+      season, or if that ring is already on file with different parents.
+    - **Proven breeders** ranks every bird by how its youngsters (any mate)
+      raced, pulled toward average when only a few have raced.
+    - **Is the Pairing Planner right?** compares planner predictions with
+      how the youngsters actually raced (rank correlation, from 5 pairings
+      up — and says plainly when the sample is still too small).
+    - Youngsters' results now feed back into the planner: a bird's index
+      includes its progeny, weighted like its parents.
+    - Pairings are included in backups. Existing Cloudflare deployments
+      need `npm run db:migrate:0006:remote` once.
+
 ## Managing pedigrees
 
 - **Reuse a bird already on file** — when starting a new pedigree, either

@@ -5,7 +5,7 @@
 // a module-level singleton, since bindings only exist per-request in a
 // Worker.
 
-import type { Bird, Result, Sex } from '../shared/types.js';
+import type { Bird, Pairing, Result, Sex } from '../shared/types.js';
 
 interface BirdRow {
   id: string;
@@ -376,4 +376,68 @@ export async function setSetting(db: D1Database, key: string, value: string): Pr
 
 export async function deleteSetting(db: D1Database, key: string): Promise<void> {
   await db.prepare('DELETE FROM settings WHERE key = ?').bind(key).run();
+}
+
+// ---- pairings ----------------------------------------------------------------
+
+interface PairingRow {
+  id: string;
+  sire_id: string;
+  dam_id: string;
+  season: number;
+  paired_on: string | null;
+  status: Pairing['status'];
+  notes: string | null;
+  prediction_json: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToPairing(row: PairingRow): Pairing {
+  return {
+    id: row.id,
+    sireId: row.sire_id,
+    damId: row.dam_id,
+    season: row.season,
+    pairedOn: row.paired_on ?? undefined,
+    status: row.status,
+    notes: row.notes ?? undefined,
+    prediction: row.prediction_json ? JSON.parse(row.prediction_json) : undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function getAllPairings(db: D1Database): Promise<Pairing[]> {
+  const { results } = await db.prepare('SELECT * FROM pairings ORDER BY season DESC, created_at DESC').all<PairingRow>();
+  return results.map(rowToPairing);
+}
+
+export async function getPairing(db: D1Database, id: string): Promise<Pairing | undefined> {
+  const row = await db.prepare('SELECT * FROM pairings WHERE id = ?').bind(id).first<PairingRow>();
+  return row ? rowToPairing(row) : undefined;
+}
+
+// Upsert by id — also what backup restore uses.
+export async function savePairing(db: D1Database, p: Pairing): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO pairings (id, sire_id, dam_id, season, paired_on, status, notes, prediction_json, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+       ON CONFLICT(id) DO UPDATE SET
+         sire_id = excluded.sire_id,
+         dam_id = excluded.dam_id,
+         season = excluded.season,
+         paired_on = excluded.paired_on,
+         status = excluded.status,
+         notes = excluded.notes,
+         prediction_json = excluded.prediction_json,
+         updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
+    )
+    .bind(p.id, p.sireId, p.damId, p.season, p.pairedOn ?? null, p.status, p.notes ?? null, p.prediction ? JSON.stringify(p.prediction) : null)
+    .run();
+}
+
+export async function deletePairing(db: D1Database, id: string): Promise<void> {
+  await db.prepare('DELETE FROM pairings WHERE id = ?').bind(id).run();
 }

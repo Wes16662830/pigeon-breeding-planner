@@ -10,6 +10,8 @@ import {
   saveChildPedigree,
   setChildPedigreeFolder,
   getSetting,
+  getAllPairings,
+  savePairing,
   setSetting,
 } from '../db.js';
 import {
@@ -60,6 +62,7 @@ backupRouter.get('/', (_req, res) => {
     uploads,
     childPedigrees,
     folders: getAllFolders().map((f) => ({ id: f.id, name: f.name })),
+    pairings: getAllPairings(),
     loft: {
       name: getSetting(LOFT_NAME_SETTING),
       subtitle: getSetting(LOFT_SUBTITLE_SETTING),
@@ -114,6 +117,8 @@ backupRouter.post('/restore', (req, res) => {
       });
       if (c.folderId) setChildPedigreeFolder(c.id, c.folderId);
     }
+    // After birds: a pairing's cock/hen are FKs into birds.
+    for (const p of body.pairings ?? []) savePairing(p);
     if (body.loft?.name !== undefined) setSetting(LOFT_NAME_SETTING, body.loft.name);
     if (body.loft?.subtitle !== undefined) setSetting(LOFT_SUBTITLE_SETTING, body.loft.subtitle);
     if (body.loft?.address !== undefined) setSetting(LOFT_ADDRESS_SETTING, body.loft.address);
@@ -127,6 +132,7 @@ backupRouter.post('/restore', (req, res) => {
       folders: body.folders?.length ?? 0,
       uploads: body.uploads?.length ?? 0,
       childPedigrees: body.childPedigrees?.length ?? 0,
+      pairings: body.pairings?.length ?? 0,
     });
   } catch (err) {
     console.error('[backup/restore] failed:', err);

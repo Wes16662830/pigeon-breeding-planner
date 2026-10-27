@@ -11,7 +11,7 @@
 // backup file is something you might hand off, store in a cloud drive, or
 // keep for years; a live secret has no business riding along in it.
 
-import type { Bird } from './types';
+import type { Bird, Pairing } from './types';
 
 export interface BackupUpload {
   id: string;
@@ -60,6 +60,7 @@ export interface BackupFile {
   uploads: BackupUpload[];
   childPedigrees: BackupChildPedigree[];
   folders: BackupFolder[];
+  pairings?: Pairing[]; // optional so backups from before pairings existed still restore
   loft: BackupLoft;
 }
 
@@ -68,4 +69,5 @@ export interface RestoreSummary {
   folders: number;
   uploads: number;
   childPedigrees: number;
+  pairings: number;
 }

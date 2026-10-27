@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Bird, Result, Sex } from '../shared/types.js';
+import type { Bird, Pairing, Result, Sex } from '../shared/types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.resolve(__dirname, '..', 'data');
@@ -395,4 +395,64 @@ export function setSetting(key: string, value: string): void {
 
 export function deleteSetting(key: string): void {
   db.prepare('DELETE FROM settings WHERE key = ?').run(key);
+}
+
+// ---- pairings ----------------------------------------------------------------
+
+interface PairingRow {
+  id: string;
+  sire_id: string;
+  dam_id: string;
+  season: number;
+  paired_on: string | null;
+  status: Pairing['status'];
+  notes: string | null;
+  prediction_json: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToPairing(row: PairingRow): Pairing {
+  return {
+    id: row.id,
+    sireId: row.sire_id,
+    damId: row.dam_id,
+    season: row.season,
+    pairedOn: row.paired_on ?? undefined,
+    status: row.status,
+    notes: row.notes ?? undefined,
+    prediction: row.prediction_json ? JSON.parse(row.prediction_json) : undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function getAllPairings(): Pairing[] {
+  return (db.prepare('SELECT * FROM pairings ORDER BY season DESC, created_at DESC').all() as PairingRow[]).map(rowToPairing);
+}
+
+export function getPairing(id: string): Pairing | undefined {
+  const row = db.prepare('SELECT * FROM pairings WHERE id = ?').get(id) as PairingRow | undefined;
+  return row ? rowToPairing(row) : undefined;
+}
+
+// Upsert by id — also what backup restore uses.
+export function savePairing(p: Pairing): void {
+  db.prepare(
+    `INSERT INTO pairings (id, sire_id, dam_id, season, paired_on, status, notes, prediction_json, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+     ON CONFLICT(id) DO UPDATE SET
+       sire_id = excluded.sire_id,
+       dam_id = excluded.dam_id,
+       season = excluded.season,
+       paired_on = excluded.paired_on,
+       status = excluded.status,
+       notes = excluded.notes,
+       prediction_json = excluded.prediction_json,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
+  ).run(p.id, p.sireId, p.damId, p.season, p.pairedOn ?? null, p.status, p.notes ?? null, p.prediction ? JSON.stringify(p.prediction) : null);
+}
+
+export function deletePairing(id: string): void {
+  db.prepare('DELETE FROM pairings WHERE id = ?').run(id);
 }

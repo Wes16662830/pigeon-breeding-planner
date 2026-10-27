@@ -390,8 +390,8 @@ export default function SettingsPage() {
         {restoreSummary && (
           <p className="text-sm text-green-600">
             Restored {restoreSummary.birds} bird{restoreSummary.birds === 1 ? '' : 's'}, {restoreSummary.folders} folder
-            {restoreSummary.folders === 1 ? '' : 's'}, {restoreSummary.uploads} upload{restoreSummary.uploads === 1 ? '' : 's'}, and{' '}
-            {restoreSummary.childPedigrees} pedigree{restoreSummary.childPedigrees === 1 ? '' : 's'}.
+            {restoreSummary.folders === 1 ? '' : 's'}, {restoreSummary.uploads} upload{restoreSummary.uploads === 1 ? '' : 's'},{' '}
+            {restoreSummary.childPedigrees} pedigree{restoreSummary.childPedigrees === 1 ? '' : 's'} and {restoreSummary.pairings} pairing{restoreSummary.pairings === 1 ? '' : 's'}.
           </p>
         )}
         {backupError && <p className="text-sm text-red-600">{backupError}</p>}

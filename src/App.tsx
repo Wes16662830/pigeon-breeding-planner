@@ -9,6 +9,7 @@ import SheetPage from './pages/SheetPage';
 import CrossReferencePage from './pages/CrossReferencePage';
 import PairingPage from './pages/PairingPage';
 import ImportPage from './pages/ImportPage';
+import BreedingRecordPage from './pages/BreedingRecordPage';
 import SettingsPage from './pages/SettingsPage';
 import BirdLibraryPage from './pages/BirdLibraryPage';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -46,6 +47,7 @@ type View =
   | { name: 'crossref' }
   | { name: 'pairing' }
   | { name: 'import' }
+  | { name: 'breeding' }
   | { name: 'library' }
   | { name: 'settings' };
 
@@ -90,7 +92,7 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
           <button className="flex items-center gap-2 font-semibold tracking-tight" onClick={reset}>
             <span className="inline-block h-3 w-3 rounded-sm" style={{ background: '#D19A45' }} />
-            OudeLuck Pedigree Builder
+            OudeLuck Breeding Planner
           </button>
           <nav className="flex gap-4 text-sm">
             <button className="hover:underline" onClick={() => setView({ name: 'home' })}>
@@ -107,6 +109,9 @@ export default function App() {
             </button>
             <button className="hover:underline" onClick={() => setView({ name: 'pairing' })}>
               Pairing Planner
+            </button>
+            <button className="hover:underline" onClick={() => setView({ name: 'breeding' })}>
+              Breeding Record
             </button>
             <button className="hover:underline" onClick={() => setView({ name: 'library' })}>
               Bird Library
@@ -169,6 +174,8 @@ export default function App() {
         {view.name === 'crossref' && <CrossReferencePage />}
 
         {view.name === 'pairing' && <PairingPage />}
+
+        {view.name === 'breeding' && <BreedingRecordPage />}
 
         {view.name === 'import' && <ImportPage onDone={() => setView({ name: 'library' })} />}
 

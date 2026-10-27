@@ -38,6 +38,7 @@ export interface IdentityNode {
   results: Result[]; // de-duplicated across rows by verbatim `raw`
   markers: BirdMarkers; // merged across rows, first non-empty value per field wins
   parentConflict?: boolean; // two records of this ring name different parents
+  childKeys: string[]; // birds that name this one as sire or dam
 }
 
 export type IdentityGraph = Map<string, IdentityNode>;
@@ -53,7 +54,7 @@ export function buildIdentityGraph(birds: Bird[]): IdentityGraph {
     const key = identityKeyOf(b);
     let node = graph.get(key);
     if (!node) {
-      node = { key, rowIds: [], ring: b.ring, sex: 'unknown', results: [], markers: {} };
+      node = { key, rowIds: [], ring: b.ring, sex: 'unknown', results: [], markers: {}, childKeys: [] };
       graph.set(key, node);
     }
     node.rowIds.push(b.id);
@@ -83,6 +84,12 @@ export function buildIdentityGraph(birds: Bird[]): IdentityGraph {
       }
     }
   }
+  for (const node of graph.values()) {
+    for (const parentKey of [node.sireKey, node.damKey]) {
+      const parent = parentKey ? graph.get(parentKey) : undefined;
+      if (parent && !parent.childKeys.includes(node.key)) parent.childKeys.push(node.key);
+    }
+  }
   return graph;
 }
 
@@ -100,6 +107,10 @@ export interface PerformanceSummary {
   evidence: number; // sum of relationship weights × scorable results — drives the confidence label
   scorableResults: number;
   meanDistanceKm?: number;
+  // Progeny test: how this bird's youngsters (any mate) have raced. Best
+  // single evidence of what a bird passes on, once there is enough of it.
+  progenyIndex?: number;
+  progenyRaced: number;
   topAncestors: { key: string; ring: string; name?: string; generation: number; percentile: number; results: number }[];
 }
 
@@ -152,7 +163,24 @@ export function performanceSummary(key: string, graph: IdentityGraph): Performan
   }
   visit(key, 0, new Set());
 
+  // Youngsters share half their genes with this bird, same as its parents
+  // do, so they're weighted like generation 1.
+  const progenyMeans: number[] = [];
+  for (const childKey of graph.get(key)?.childKeys ?? []) {
+    const pcts = (graph.get(childKey)?.results ?? []).map(resultPercentile).filter((p): p is number => p !== undefined);
+    if (!pcts.length) continue;
+    const mean = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+    const w = 0.5 * Math.min(1, Math.sqrt(pcts.length / 4));
+    weightedSum += mean * w;
+    weightTotal += w;
+    evidence += 0.5 * pcts.length;
+    scorableResults += pcts.length;
+    progenyMeans.push(mean);
+  }
+
   return {
+    progenyIndex: progenyMeans.length ? progenyMeans.reduce((a, b) => a + b, 0) / progenyMeans.length : undefined,
+    progenyRaced: progenyMeans.length,
     index: weightTotal > 0 ? weightedSum / weightTotal : undefined,
     ownIndex,
     ownScorable,

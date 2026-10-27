@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { getAllBirds } from '../lib/api';
+import { createPairing, getAllBirds } from '../lib/api';
 import type { Bird, BirdMarkers } from '../../shared/types';
 import {
   buildIdentityGraph,
@@ -68,6 +68,9 @@ function PerfBlock({ title, perf, graph, birdKey }: { title: string; perf: Perfo
         Pedigree index: {pct(perf.index)} from {perf.scorableResults} scorable result{perf.scorableResults === 1 ? '' : 's'}
       </div>
       <div className="text-neutral-600">
+        Youngsters raced: {perf.progenyRaced ? `${perf.progenyRaced}, averaging ${pct(perf.progenyIndex)}` : 'none on file'}
+      </div>
+      <div className="text-neutral-600">
         Distance profile: {perf.meanDistanceKm ? `${Math.round(perf.meanDistanceKm)} km (${distanceBand(perf.meanDistanceKm)})` : 'unknown'}
       </div>
       {perf.topAncestors.length > 0 && (
@@ -92,6 +95,8 @@ export default function PairingPage() {
   const [maxCoi, setMaxCoi] = useState(0.125);
   const [expanded, setExpanded] = useState<string>();
   const [results, setResults] = useState<PairingSuggestion[]>();
+  const [season, setSeason] = useState(new Date().getFullYear());
+  const [recorded, setRecorded] = useState<Record<string, string>>({}); // pair id → status message
 
   useEffect(() => {
     getAllBirds()
@@ -119,6 +124,31 @@ export default function PairingPage() {
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setter(next);
+  }
+
+  // A pairing references real bird rows; prefer a verified record of the bird.
+  function rowIdFor(key: string) {
+    return birds?.find((b) => b.verified && identityKeyOf(b) === key)?.id ?? graph.get(key)?.rowIds[0];
+  }
+
+  async function record(r: PairingSuggestion) {
+    const id = `${r.sireKey}|${r.damKey}`;
+    const sireId = rowIdFor(r.sireKey);
+    const damId = rowIdFor(r.damKey);
+    if (!sireId || !damId) return;
+    setRecorded((m) => ({ ...m, [id]: 'Saving…' }));
+    try {
+      await createPairing({
+        sireId,
+        damId,
+        season,
+        status: 'planned',
+        prediction: { score: r.score, expectedIndex: r.expectedIndex, coi: r.coi, evidence: r.evidence, recordedAt: new Date().toISOString() },
+      });
+      setRecorded((m) => ({ ...m, [id]: `Recorded for ${season} — see Breeding Record.` }));
+    } catch (e) {
+      setRecorded((m) => ({ ...m, [id]: e instanceof Error ? e.message : 'Failed to record' }));
+    }
   }
 
   function run() {
@@ -168,7 +198,7 @@ export default function PairingPage() {
       <div>
         <h1 className="text-2xl font-semibold">Pairing planner</h1>
         <p className="mt-1 text-sm text-neutral-500">
-          Ranks every selected cock × hen by projected inbreeding, the race record behind each side (own results plus ancestors, halved per generation), and
+          Ranks every selected cock × hen by projected inbreeding, the race record behind each side (own results, ancestors halved per generation, and how its youngsters have raced), and
           distance profile. Only results with both a position and a pool size can be scored — enter those in the Bird Library to sharpen the ranking. A high
           score with thin evidence is a guess, not a recommendation.
         </p>
@@ -267,6 +297,26 @@ export default function PairingPage() {
                                     ))}
                                   </ul>
                                 )}
+                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                  <input
+                                    type="number"
+                                    className="w-20 rounded border px-2 py-1 text-sm"
+                                    value={season}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => setSeason(Number(e.target.value))}
+                                  />
+                                  <button
+                                    className="rounded border px-3 py-1 text-sm font-semibold hover:bg-white disabled:opacity-40"
+                                    disabled={!!recorded[id] && recorded[id] !== 'Failed to record'}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      record(r);
+                                    }}
+                                  >
+                                    Record this pairing
+                                  </button>
+                                  {recorded[id] && <span className="text-xs text-neutral-600">{recorded[id]}</span>}
+                                </div>
                               </div>
                             </div>
                           </td>

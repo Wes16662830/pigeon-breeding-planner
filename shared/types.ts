@@ -81,6 +81,36 @@ export interface BirdMarkers {
   breedingNotes?: string;
 }
 
+// A pairing actually made in the loft — a cock and hen put together for a
+// season. Youngsters aren't stored on the pairing: they're birds whose
+// sire/dam are this cock and hen (matched by ring, see
+// shared/breedingRecord.ts), so a youngster entered anywhere — here, a
+// merged pedigree sheet, a spreadsheet import — counts the same.
+export type PairingStatus = 'planned' | 'active' | 'ended';
+
+export interface PairingPrediction {
+  // Snapshot of what the planner said when the pairing was recorded, so it
+  // can be checked against how the youngsters actually raced.
+  score?: number;
+  expectedIndex?: number;
+  coi: number;
+  evidence: string;
+  recordedAt: string;
+}
+
+export interface Pairing {
+  id: string;
+  sireId: string;
+  damId: string;
+  season: number;
+  pairedOn?: string; // YYYY-MM-DD
+  status: PairingStatus;
+  notes?: string;
+  prediction?: PairingPrediction;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // A pedigree upload produces one root Bird (the parent whose sheet was
 // scanned) plus its ancestor tree, flattened into a list of Birds linked by
 // sireId/damId. The root is always birds[0].

@@ -10,6 +10,8 @@ import {
   saveChildPedigree,
   setChildPedigreeFolder,
   getSetting,
+  getAllPairings,
+  savePairing,
   setSetting,
 } from '../db.js';
 import {
@@ -59,6 +61,7 @@ backupRouter.get('/', async (c) => {
     birds: await getAllBirds(db),
     uploads,
     childPedigrees,
+    pairings: await getAllPairings(db),
     folders: (await getAllFolders(db)).map((f) => ({ id: f.id, name: f.name })),
     loft: {
       name: await getSetting(db, LOFT_NAME_SETTING),
@@ -112,6 +115,8 @@ backupRouter.post('/restore', async (c) => {
       });
       if (ch.folderId) await setChildPedigreeFolder(db, ch.id, ch.folderId);
     }
+    // After birds: a pairing's cock/hen are FKs into birds.
+    for (const p of body.pairings ?? []) await savePairing(db, p);
     if (body.loft?.name !== undefined) await setSetting(db, LOFT_NAME_SETTING, body.loft.name);
     if (body.loft?.subtitle !== undefined) await setSetting(db, LOFT_SUBTITLE_SETTING, body.loft.subtitle);
     if (body.loft?.address !== undefined) await setSetting(db, LOFT_ADDRESS_SETTING, body.loft.address);
@@ -125,6 +130,7 @@ backupRouter.post('/restore', async (c) => {
       folders: body.folders?.length ?? 0,
       uploads: body.uploads?.length ?? 0,
       childPedigrees: body.childPedigrees?.length ?? 0,
+      pairings: body.pairings?.length ?? 0,
     });
   } catch (err) {
     console.error('[backup/restore] failed:', err);

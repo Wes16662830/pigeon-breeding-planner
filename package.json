@@ -15,8 +15,8 @@
     "batch": "tsx server/scripts/batch.ts",
     "worker:dev": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
-    "db:migrate:local": "wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0001_init.sql && npm run db:migrate:0003:local && npm run db:migrate:0004:local && npm run db:migrate:0005:local",
-    "db:migrate:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0001_init.sql && npm run db:migrate:0003:remote && npm run db:migrate:0004:remote && npm run db:migrate:0005:remote",
+    "db:migrate:local": "wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0001_init.sql && npm run db:migrate:0003:local && npm run db:migrate:0004:local && npm run db:migrate:0005:local && npm run db:migrate:0006:local",
+    "db:migrate:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0001_init.sql && npm run db:migrate:0003:remote && npm run db:migrate:0004:remote && npm run db:migrate:0005:remote && npm run db:migrate:0006:remote",
     "db:seed:sql": "tsx scripts/build-seed-sql.ts",
     "db:seed:local:d1": "npm run db:seed:sql && wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0002_seed_fixtures.sql",
     "db:seed:remote": "npm run db:seed:sql && wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0002_seed_fixtures.sql",
@@ -25,7 +25,9 @@
     "db:migrate:0004:local": "wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0004_photos_and_templates.sql",
     "db:migrate:0004:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0004_photos_and_templates.sql",
     "db:migrate:0005:local": "wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0005_markers.sql",
-    "db:migrate:0005:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0005_markers.sql"
+    "db:migrate:0005:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0005_markers.sql",
+    "db:migrate:0006:local": "wrangler d1 execute oudeluck-breeding-planner --local --file=./migrations/0006_pairings.sql",
+    "db:migrate:0006:remote": "wrangler d1 execute oudeluck-breeding-planner --remote --file=./migrations/0006_pairings.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
