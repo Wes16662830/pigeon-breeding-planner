@@ -89,6 +89,19 @@ upload 2 files → vision extract → HUMAN VERIFY → merge into child → rend
    verification before it can be merged or rendered; batch mode does not
    render certificates from unverified data.
 
+8. **Pairing planner** (Pairing Planner tab, `shared/pairing.ts`) — tick the
+   cocks and hens you're considering and every combination is ranked by:
+   projected offspring COI (Wright's, across the merged tree), each side's
+   performance index (own results plus ancestors' results, weighted 0.5 per
+   generation, pulled toward average when evidence is thin), distance
+   profile (sprint/middle/long mismatch is flagged), and which common
+   ancestors drive the COI — with proven performers called out. Fully
+   deterministic, computed in the browser, no API cost. Only results with
+   **both a position and a pool size** can be scored; a bare "17th" isn't
+   comparable across races. It ranks pairings by what the pedigree data
+   supports — it does not predict winners, and it does not yet account for
+   race-day conditions, weather or OLR loft effects.
+
 ## Managing pedigrees
 
 - **Reuse a bird already on file** — when starting a new pedigree, either
