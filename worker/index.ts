@@ -14,6 +14,7 @@ import { exportRouter } from './routes/export.js';
 import { settingsRouter } from './routes/settings.js';
 import { foldersRouter } from './routes/folders.js';
 import { backupRouter } from './routes/backup.js';
+import { importRouter } from './routes/import.js';
 import type { Env } from './env.js';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -28,6 +29,7 @@ app.route('/api/pedigrees', exportRouter);
 app.route('/api/settings', settingsRouter);
 app.route('/api/folders', foldersRouter);
 app.route('/api/backup', backupRouter);
+app.route('/api/import', importRouter);
 
 // Serves uploaded scans and exported sheets back out of R2 — the Worker
 // equivalent of Express's `app.use('/uploads', express.static(...))`.

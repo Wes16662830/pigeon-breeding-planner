@@ -102,6 +102,36 @@ upload 2 files → vision extract → HUMAN VERIFY → merge into child → rend
    supports — it does not predict winners, and it does not yet account for
    race-day conditions, weather or OLR loft effects.
 
+9. **Spreadsheet import** (Import tab, `shared/importBirds.ts`) — bring a
+   whole loft in from another program instead of scanning sheets one at a
+   time. From PigeonDB: put the birds in a list → **Export to CSV**; any
+   other program or an Excel sheet saved as CSV works the same way. Columns
+   are matched by name (ring/band, year, name, sex, colour, sire, dam,
+   family, strain, status…) and can be re-pointed before importing. Sire
+   and dam ring columns link the family; a parent that isn't its own row
+   becomes a ring-only placeholder. Imported birds are saved `verified`
+   (it's your own structured data, not a model's reading of a scan).
+   Re-importing the same export updates those birds rather than
+   duplicating them and keeps markers entered by hand since. If the file's
+   parents for a ring disagree with a scanned pedigree already on file,
+   the import says so and keeps both — and the Pairing Planner flags any
+   pair touching that bird. Printed/PDF pedigrees still go through
+   **New Pedigree**.
+
+10. **Breeding & performance markers** (Bird Library → a bird → "Breeding &
+    performance markers"; stored as `birds.markers_json`) — family/line,
+    strain, foundation champion; eye sign, size, build, wing/feather/
+    handling scores (1–5); distance category, ace points, prize %, best
+    performance; role (racer/stock/proven breeder/young/retired), winning
+    youngsters bred, who it breeds well with. All optional — blank means
+    "not assessed". Results also take a race type (club/federation/
+    national/**OLR**) and distance. The Bird Library search covers family
+    and strain; the Pairing Planner shows markers per bird and uses the
+    distance category when no result carries a distance.
+
+    Existing Cloudflare deployments need the column added once:
+    `npm run db:migrate:0005:remote` (the local server migrates itself).
+
 ## Managing pedigrees
 
 - **Reuse a bird already on file** — when starting a new pedigree, either

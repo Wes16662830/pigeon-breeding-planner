@@ -23,7 +23,9 @@
     "db:migrate:0003:local": "wrangler d1 execute oudeluck-pedigree-builder --local --file=./migrations/0003_folders_and_reuse.sql",
     "db:migrate:0003:remote": "wrangler d1 execute oudeluck-pedigree-builder --remote --file=./migrations/0003_folders_and_reuse.sql",
     "db:migrate:0004:local": "wrangler d1 execute oudeluck-pedigree-builder --local --file=./migrations/0004_photos_and_templates.sql",
-    "db:migrate:0004:remote": "wrangler d1 execute oudeluck-pedigree-builder --remote --file=./migrations/0004_photos_and_templates.sql"
+    "db:migrate:0004:remote": "wrangler d1 execute oudeluck-pedigree-builder --remote --file=./migrations/0004_photos_and_templates.sql",
+    "db:migrate:0005:local": "wrangler d1 execute oudeluck-pedigree-builder --local --file=./migrations/0005_markers.sql",
+    "db:migrate:0005:remote": "wrangler d1 execute oudeluck-pedigree-builder --remote --file=./migrations/0005_markers.sql"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

@@ -8,6 +8,7 @@ import MergePage from './pages/MergePage';
 import SheetPage from './pages/SheetPage';
 import CrossReferencePage from './pages/CrossReferencePage';
 import PairingPage from './pages/PairingPage';
+import ImportPage from './pages/ImportPage';
 import SettingsPage from './pages/SettingsPage';
 import BirdLibraryPage from './pages/BirdLibraryPage';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -44,6 +45,7 @@ type View =
   | { name: 'sheet'; childPedigreeId: string }
   | { name: 'crossref' }
   | { name: 'pairing' }
+  | { name: 'import' }
   | { name: 'library' }
   | { name: 'settings' };
 
@@ -96,6 +98,9 @@ export default function App() {
             </button>
             <button className="hover:underline" onClick={() => setView({ name: 'upload' })}>
               New Pedigree
+            </button>
+            <button className="hover:underline" onClick={() => setView({ name: 'import' })}>
+              Import
             </button>
             <button className="hover:underline" onClick={() => setView({ name: 'crossref' })}>
               Cross-reference
@@ -164,6 +169,8 @@ export default function App() {
         {view.name === 'crossref' && <CrossReferencePage />}
 
         {view.name === 'pairing' && <PairingPage />}
+
+        {view.name === 'import' && <ImportPage onDone={() => setView({ name: 'library' })} />}
 
         {view.name === 'library' && <BirdLibraryPage onOpenPedigree={(childPedigreeId) => setView({ name: 'sheet', childPedigreeId })} />}
 

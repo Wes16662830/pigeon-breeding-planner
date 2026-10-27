@@ -3,6 +3,7 @@
 
 import type { Bird, CrossReferenceReport, ExtractedPedigree, InbreedingResult, PedigreeProse, Result } from '../../shared/types';
 import type { BackupFile, RestoreSummary } from '../../shared/backup';
+import type { ImportRow } from '../../shared/importBirds';
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api${path}`, {
@@ -55,6 +56,17 @@ export function getUpload(uploadId: string) {
     rawExtraction: ExtractedPedigree | null;
     fileUrl: string;
   }>(`/extract/${uploadId}`);
+}
+
+export interface ImportResult {
+  created: number;
+  updated: number;
+  placeholderParents: number;
+  parentConflicts: string[];
+}
+
+export function importBirdRows(fileName: string, rows: ImportRow[]): Promise<ImportResult> {
+  return api('/import/birds', { method: 'POST', body: JSON.stringify({ fileName, rows }) });
 }
 
 export function getAllBirds(): Promise<Bird[]> {

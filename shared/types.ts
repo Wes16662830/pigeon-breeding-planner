@@ -12,6 +12,8 @@
 
 export type Sex = 'cock' | 'hen' | 'unknown';
 
+export type RaceType = 'club' | 'federation' | 'national' | 'olr';
+
 export interface Result {
   race: string; // "Graaff-Reinet"
   distanceKm?: number; // 390
@@ -19,6 +21,9 @@ export interface Result {
   position?: number; // 17
   poolSize?: number; // 1100
   federation?: string; // "Bloemfontein Federation"
+  // One-loft races put every bird under the same management, so their
+  // results say more about the bird itself than a club result does.
+  raceType?: RaceType;
   raw: string; // verbatim source text — always keep
 }
 
@@ -38,10 +43,42 @@ export interface Bird {
   damId?: string;
   sourceFile?: string; // which upload this came from
   photoUrl?: string; // /uploads/photos/... — optional, set via POST /api/birds/:id/photo
+  markers?: BirdMarkers; // the fancier's own assessment — see BirdMarkers
   confidence: number; // 0–1, from extraction
   verified: boolean; // human confirmed in Phase 2
   createdAt?: string;
   updatedAt?: string;
+}
+
+// The fancier's own breeding and performance assessment of a bird —
+// entered by hand (Bird Library) or imported from a spreadsheet, never
+// produced by extraction. Every field is optional: a blank is "not
+// assessed", not "bad".
+export type DistanceCategory = 'sprint' | 'middle' | 'long' | 'marathon';
+export type BirdRole = 'racer' | 'stock' | 'proven-breeder' | 'young' | 'retired';
+
+export interface BirdMarkers {
+  // Family & strain
+  family?: string; // the loft's own line name, e.g. "Yellow Ring line"
+  strain?: string; // e.g. "Janssen", "Van Loon x Kopecky"
+  foundationBird?: string; // the champion this line is built on (ring or name)
+  // Physical / type, scored 1–5 where scored
+  eyeSign?: string;
+  size?: 'small' | 'medium' | 'large';
+  build?: string; // free text: "short-coupled", "long-cast"…
+  wingScore?: number;
+  featherScore?: number;
+  handlingScore?: number; // balance, muscle, back
+  // Performance
+  category?: DistanceCategory;
+  acePoints?: number;
+  prizePercent?: number; // % of races prized, 0–100
+  bestPerformance?: string;
+  // Breeding record
+  role?: BirdRole;
+  winningOffspring?: number; // youngsters with a top-10% result
+  goodWith?: string; // mates/lines it has bred well with
+  breedingNotes?: string;
 }
 
 // A pedigree upload produces one root Bird (the parent whose sheet was

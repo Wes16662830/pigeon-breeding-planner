@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { getAllBirds } from '../lib/api';
-import type { Bird } from '../../shared/types';
+import type { Bird, BirdMarkers } from '../../shared/types';
 import {
   buildIdentityGraph,
   DEFAULT_PAIRING_OPTIONS,
@@ -43,10 +43,24 @@ function coiStyle(coi: number) {
   return '';
 }
 
-function PerfBlock({ title, perf, graph }: { title: string; perf: PerformanceSummary; graph: IdentityGraph }) {
+function markerSummary(m: BirdMarkers) {
+  return [m.family, m.strain, m.category, m.role?.replace('-', ' ')].filter(Boolean).join(' · ');
+}
+
+function PerfBlock({ title, perf, graph, birdKey }: { title: string; perf: PerformanceSummary; graph: IdentityGraph; birdKey: string }) {
+  const m = graph.get(birdKey)?.markers ?? {};
+  const extras = [
+    m.prizePercent !== undefined && `${m.prizePercent}% prized`,
+    m.acePoints !== undefined && `${m.acePoints} ace pts`,
+    m.winningOffspring !== undefined && `${m.winningOffspring} winning youngsters`,
+    m.handlingScore !== undefined && `handling ${m.handlingScore}/5`,
+  ].filter(Boolean);
   return (
     <div>
       <div className="font-semibold">{title}</div>
+      {markerSummary(m) && <div className="text-neutral-600">{markerSummary(m)}</div>}
+      {extras.length > 0 && <div className="text-xs text-neutral-500">{extras.join(' · ')}</div>}
+      {m.goodWith && <div className="text-xs text-neutral-500">Breeds well with: {m.goodWith}</div>}
       <div className="text-neutral-600">
         Own record: {perf.ownScorable ? `${pct(perf.ownIndex)} avg percentile over ${perf.ownScorable} race${perf.ownScorable > 1 ? 's' : ''}` : 'no scorable results'}
       </div>
@@ -140,6 +154,7 @@ export default function PairingPage() {
             <span>
               {c.ring} {c.name && `"${c.name}"`}
               {c.sex === 'unknown' && <span className="ml-1 text-xs text-red-600">sex unknown</span>}
+              {markerSummary(c.markers) && <span className="ml-1 text-xs text-neutral-400">{markerSummary(c.markers)}</span>}
             </span>
           </label>
         ))}
@@ -229,8 +244,8 @@ export default function PairingPage() {
                         <tr className="border-t bg-neutral-50">
                           <td colSpan={7} className="px-3 py-3">
                             <div className="grid gap-4 text-sm md:grid-cols-3">
-                              <PerfBlock title="Cock" perf={r.sirePerf} graph={graph} />
-                              <PerfBlock title="Hen" perf={r.damPerf} graph={graph} />
+                              <PerfBlock title="Cock" perf={r.sirePerf} graph={graph} birdKey={r.sireKey} />
+                              <PerfBlock title="Hen" perf={r.damPerf} graph={graph} birdKey={r.damKey} />
                               <div>
                                 <div className="font-semibold">Common ancestors</div>
                                 {r.commonAncestors.length ? (

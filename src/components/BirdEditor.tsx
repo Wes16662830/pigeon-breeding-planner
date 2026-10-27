@@ -3,6 +3,7 @@ import type { Bird, Sex } from '../../shared/types';
 import { CONFIDENCE_FLAG_THRESHOLD } from '../../shared/types';
 import { deleteBirdPhoto, uploadBirdPhoto } from '../lib/api';
 import { ResultsEditor } from './ResultsEditor';
+import MarkersEditor from './MarkersEditor';
 
 // The full bird field editor — ring/name/sex/colour/breeder/notes/results,
 // plus an optional photo. Used both in Phase 2 verification (one card per
@@ -29,9 +30,11 @@ export interface BirdEditorProps {
   onVerifyToggle?: (v: boolean) => void;
   /** Photo upload widget. Defaults on. */
   showPhoto?: boolean;
+  /** Breeding/performance markers section. Off by default — it's for the loft's own birds, not for verifying a scan. */
+  showMarkers?: boolean;
 }
 
-export default function BirdEditor({ bird, onSave, active, onFocus, showConfidence, onVerifyToggle, showPhoto = true }: BirdEditorProps) {
+export default function BirdEditor({ bird, onSave, active, onFocus, showConfidence, onVerifyToggle, showPhoto = true, showMarkers = false }: BirdEditorProps) {
   const [local, setLocal] = useState(bird);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string>();
@@ -194,6 +197,18 @@ export default function BirdEditor({ bird, onSave, active, onFocus, showConfiden
             }}
           />
         </div>
+
+        {showMarkers && (
+          <details className="col-span-2 rounded border border-neutral-200 p-2" open={!!local.markers && Object.keys(local.markers).length > 0}>
+            <summary className="cursor-pointer text-sm font-semibold">Breeding &amp; performance markers</summary>
+            <MarkersEditor
+              markers={local.markers}
+              onChange={(markers) => {
+                commit({ markers });
+              }}
+            />
+          </details>
+        )}
       </div>
 
       {onVerifyToggle && (

@@ -41,7 +41,10 @@ export default function BirdLibraryPage({ onOpenPedigree }: Props) {
   const filtered = useMemo(() => {
     if (!birds) return birds;
     if (!q) return [...birds].sort((a, b) => a.ring.localeCompare(b.ring));
-    return birds.filter((b) => b.ring.toLowerCase().includes(q) || (b.name ?? '').toLowerCase().includes(q)).sort((a, b) => a.ring.localeCompare(b.ring));
+    return birds
+      .filter((b) =>
+        [b.ring, b.name, b.markers?.family, b.markers?.strain].some((v) => (v ?? '').toLowerCase().includes(q)),
+      ).sort((a, b) => a.ring.localeCompare(b.ring));
   }, [birds, q]);
 
   const selected = birds?.find((b) => b.id === selectedId);
@@ -67,7 +70,7 @@ export default function BirdLibraryPage({ onOpenPedigree }: Props) {
           <input
             autoFocus
             className="mb-2 w-full rounded border px-2 py-1.5 text-sm"
-            placeholder="Search by ring or name…"
+            placeholder="Search by ring, name, family or strain…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -99,7 +102,7 @@ export default function BirdLibraryPage({ onOpenPedigree }: Props) {
         <div className="lg:col-span-2">
           {selected ? (
             <>
-              <BirdEditor key={selected.id} bird={selected} onSave={save} />
+              <BirdEditor key={selected.id} bird={selected} onSave={save} showMarkers />
 
               <div className="mt-4 rounded-lg border border-neutral-200 bg-white p-3">
                 <h3 className="mb-2 text-sm font-semibold">Appears on</h3>

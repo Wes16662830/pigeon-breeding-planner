@@ -23,6 +23,7 @@ interface BirdRow {
   dam_id: string | null;
   source_file: string | null;
   photo_url: string | null;
+  markers_json: string | null;
   confidence: number;
   verified: number;
   created_at: string;
@@ -46,6 +47,7 @@ function rowToBird(row: BirdRow): Bird {
     damId: row.dam_id ?? undefined,
     sourceFile: row.source_file ?? undefined,
     photoUrl: row.photo_url ?? undefined,
+    markers: row.markers_json ? JSON.parse(row.markers_json) : undefined,
     confidence: row.confidence,
     verified: !!row.verified,
     createdAt: row.created_at,
@@ -53,13 +55,13 @@ function rowToBird(row: BirdRow): Bird {
   };
 }
 
-export async function saveBird(db: D1Database, bird: Bird): Promise<void> {
-  await db
+function saveBirdStatement(db: D1Database, bird: Bird): D1PreparedStatement {
+  return db
     .prepare(
       `INSERT INTO birds (id, ring, ring_normalised, name, colour, sex, breeder, loft_address,
                           notes_json, notes_en_json, results_json, sire_id, dam_id, source_file,
-                          confidence, verified, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+                          markers_json, confidence, verified, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
        ON CONFLICT(id) DO UPDATE SET
          ring = excluded.ring,
          ring_normalised = excluded.ring_normalised,
@@ -74,6 +76,7 @@ export async function saveBird(db: D1Database, bird: Bird): Promise<void> {
          sire_id = excluded.sire_id,
          dam_id = excluded.dam_id,
          source_file = excluded.source_file,
+         markers_json = excluded.markers_json,
          confidence = excluded.confidence,
          verified = excluded.verified,
          updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')`,
@@ -93,10 +96,28 @@ export async function saveBird(db: D1Database, bird: Bird): Promise<void> {
       bird.sireId ?? null,
       bird.damId ?? null,
       bird.sourceFile ?? null,
+      bird.markers ? JSON.stringify(bird.markers) : null,
       bird.confidence,
       bird.verified ? 1 : 0,
-    )
-    .run();
+    );
+}
+
+export async function saveBird(db: D1Database, bird: Bird): Promise<void> {
+  await saveBirdStatement(db, bird).run();
+}
+
+// Same two-pass shape as saveBirds, but as one D1 batch (a single round
+// trip, applied atomically) — for spreadsheet imports, where a few hundred
+// birds as sequential awaits would be slow and could run into the Worker's
+// per-invocation query limit.
+export async function saveBirdsBatch(db: D1Database, birds: Bird[]): Promise<void> {
+  if (!birds.length) return;
+  await db.batch([
+    ...birds.map((b) => saveBirdStatement(db, { ...b, sireId: undefined, damId: undefined })),
+    ...birds
+      .filter((b) => b.sireId || b.damId)
+      .map((b) => db.prepare('UPDATE birds SET sire_id = ?, dam_id = ? WHERE id = ?').bind(b.sireId ?? null, b.damId ?? null, b.id)),
+  ]);
 }
 
 // Extraction doesn't guarantee a bird's ancestors appear earlier in the

@@ -24,7 +24,7 @@
 // its results and parents may be split across them. `buildIdentityGraph`
 // folds those rows back into one node per bird before anything is scored.
 
-import type { Bird, Result } from './types.js';
+import type { Bird, BirdMarkers, Result } from './types.js';
 import { coefficientOfInbreeding } from './inbreeding.js';
 
 export interface IdentityNode {
@@ -36,6 +36,8 @@ export interface IdentityNode {
   sireKey?: string;
   damKey?: string;
   results: Result[]; // de-duplicated across rows by verbatim `raw`
+  markers: BirdMarkers; // merged across rows, first non-empty value per field wins
+  parentConflict?: boolean; // two records of this ring name different parents
 }
 
 export type IdentityGraph = Map<string, IdentityNode>;
@@ -51,19 +53,28 @@ export function buildIdentityGraph(birds: Bird[]): IdentityGraph {
     const key = identityKeyOf(b);
     let node = graph.get(key);
     if (!node) {
-      node = { key, rowIds: [], ring: b.ring, sex: 'unknown', results: [] };
+      node = { key, rowIds: [], ring: b.ring, sex: 'unknown', results: [], markers: {} };
       graph.set(key, node);
     }
     node.rowIds.push(b.id);
     if (!node.name && b.name) node.name = b.name;
     if (node.sex === 'unknown' && b.sex !== 'unknown') node.sex = b.sex;
+    if (b.markers) node.markers = { ...b.markers, ...node.markers };
     // First row that knows a parent wins. Two uploads disagreeing about a
     // bird's parents is a data error for the verify step, not something to
     // average over here.
     const sire = b.sireId ? byId.get(b.sireId) : undefined;
     const dam = b.damId ? byId.get(b.damId) : undefined;
-    if (!node.sireKey && sire) node.sireKey = identityKeyOf(sire);
-    if (!node.damKey && dam) node.damKey = identityKeyOf(dam);
+    if (sire) {
+      const k = identityKeyOf(sire);
+      if (!node.sireKey) node.sireKey = k;
+      else if (node.sireKey !== k) node.parentConflict = true;
+    }
+    if (dam) {
+      const k = identityKeyOf(dam);
+      if (!node.damKey) node.damKey = k;
+      else if (node.damKey !== k) node.parentConflict = true;
+    }
     const seen = new Set(node.results.map((r) => r.raw));
     for (const r of b.results) {
       if (!seen.has(r.raw)) {
@@ -170,6 +181,11 @@ export function distanceBand(km?: number): DistanceBand | undefined {
   return 'long';
 }
 
+function categoryBand(c: BirdMarkers['category']): DistanceBand | undefined {
+  if (!c) return undefined;
+  return c === 'marathon' ? 'long' : c;
+}
+
 export interface PairingOptions {
   // Projected COI below this is not penalised. Mild line-breeding onto a
   // proven bird is often the point; 6.25% ≈ first-cousin mating.
@@ -258,8 +274,10 @@ export function rankPairings(
         sirePerf.index === undefined && damPerf.index === undefined ? undefined : (shrunkIndex(sirePerf) + shrunkIndex(damPerf)) / 2;
       const evidence = evidenceRank[Math.min(evidenceRank.indexOf(evidenceLevel(sirePerf.evidence)), evidenceRank.indexOf(evidenceLevel(damPerf.evidence)))];
 
-      const sb = distanceBand(sirePerf.meanDistanceKm);
-      const db = distanceBand(damPerf.meanDistanceKm);
+      // Measured distances win; the fancier's own category marker fills in
+      // when no result carries a distance.
+      const sb = distanceBand(sirePerf.meanDistanceKm) ?? categoryBand(graph.get(sireKey)?.markers.category);
+      const db = distanceBand(damPerf.meanDistanceKm) ?? categoryBand(graph.get(damKey)?.markers.category);
       const distanceMismatch = !!sb && !!db && ((sb === 'sprint' && db === 'long') || (sb === 'long' && db === 'sprint'));
 
       const commonAncestors: CommonAncestor[] = contributingAncestors.map((c) => {
@@ -274,6 +292,10 @@ export function rankPairings(
       const gd = graph.get(damKey);
       if (gs?.sireKey && gs.sireKey === gd?.sireKey && gs.damKey && gs.damKey === gd?.damKey) notes.push('Full siblings.');
       else if ((gs?.sireKey && gs.sireKey === gd?.sireKey) || (gs?.damKey && gs.damKey === gd?.damKey)) notes.push('Half siblings.');
+      const conflicted = [gs, gd].filter((n) => n?.parentConflict).map((n) => n!.ring);
+      if (conflicted.length) {
+        notes.unshift(`Records disagree about the parents of ${conflicted.join(' and ')} — COI and sibling checks use the first record found. Fix in the Bird Library.`);
+      }
       const provenCommon = commonAncestors.filter((c) => c.percentile !== undefined && c.percentile >= 0.9);
       if (provenCommon.length) {
         notes.push(`Concentrates proven performer${provenCommon.length > 1 ? 's' : ''}: ${provenCommon.map((c) => c.name ? `${c.ring} "${c.name}"` : c.ring).join(', ')}.`);

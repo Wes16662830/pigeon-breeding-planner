@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS birds (
   dam_id            TEXT REFERENCES birds(id),
   source_file       TEXT,
   photo_url         TEXT,                        -- /uploads/photos/... — optional, set via POST /api/birds/:id/photo
+  markers_json      TEXT,                        -- JSON BirdMarkers — the fancier's own assessment, never extracted
   confidence        REAL NOT NULL DEFAULT 1,
   verified          INTEGER NOT NULL DEFAULT 0,  -- 0/1, set true only via Phase 2 verification
   created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),

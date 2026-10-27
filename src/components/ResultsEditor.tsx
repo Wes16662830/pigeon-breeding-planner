@@ -36,6 +36,30 @@ export function ResultRow({ result, onChange, onRemove }: { result: Result; onCh
       <button onClick={onRemove} className="rounded border border-red-200 px-1 text-red-600 hover:bg-red-50">
         remove
       </button>
+      <select
+        className="col-span-2 rounded border px-1 py-0.5"
+        value={result.raceType ?? ''}
+        onChange={(e) => onChange({ ...result, raceType: (e.target.value || undefined) as Result['raceType'] })}
+      >
+        <option value="">race type…</option>
+        <option value="club">club</option>
+        <option value="federation">federation</option>
+        <option value="national">national</option>
+        <option value="olr">one-loft race (OLR)</option>
+      </select>
+      <input
+        className="rounded border px-1 py-0.5"
+        placeholder="km"
+        type="number"
+        value={result.distanceKm ?? ''}
+        onChange={(e) => onChange({ ...result, distanceKm: e.target.value ? Number(e.target.value) : undefined })}
+      />
+      <input
+        className="col-span-3 rounded border px-1 py-0.5"
+        placeholder="federation / organiser"
+        value={result.federation ?? ''}
+        onChange={(e) => onChange({ ...result, federation: e.target.value || undefined })}
+      />
       <input
         className="col-span-6 rounded border px-1 py-0.5 font-mono"
         placeholder="verbatim source text"

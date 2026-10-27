@@ -48,6 +48,12 @@ if (tableExists) {
   if (!hasPhotoUrl || !hasTemplate) {
     console.log('[db] Migrated birds/child_pedigrees to support photos and templates.');
   }
+
+  // 0005: per-bird markers — plain ADD COLUMN, same pattern as 0004.
+  if (!birdColumns.some((c) => c.name === 'markers_json')) {
+    db.exec('ALTER TABLE birds ADD COLUMN markers_json TEXT');
+    console.log('[db] Migrated birds to support breeding/performance markers.');
+  }
 }
 
 const schema = fs.readFileSync(path.resolve(__dirname, '..', 'schema.sql'), 'utf-8');
@@ -71,6 +77,7 @@ interface BirdRow {
   dam_id: string | null;
   source_file: string | null;
   photo_url: string | null;
+  markers_json: string | null;
   confidence: number;
   verified: number;
   created_at: string;
@@ -94,6 +101,7 @@ function rowToBird(row: BirdRow): Bird {
     damId: row.dam_id ?? undefined,
     sourceFile: row.source_file ?? undefined,
     photoUrl: row.photo_url ?? undefined,
+    markers: row.markers_json ? JSON.parse(row.markers_json) : undefined,
     confidence: row.confidence,
     verified: !!row.verified,
     createdAt: row.created_at,
@@ -104,10 +112,10 @@ function rowToBird(row: BirdRow): Bird {
 const upsertStmt = db.prepare(`
   INSERT INTO birds (id, ring, ring_normalised, name, colour, sex, breeder, loft_address,
                       notes_json, notes_en_json, results_json, sire_id, dam_id, source_file,
-                      confidence, verified, updated_at)
+                      markers_json, confidence, verified, updated_at)
   VALUES (@id, @ring, @ringNormalised, @name, @colour, @sex, @breeder, @loftAddress,
           @notesJson, @notesEnJson, @resultsJson, @sireId, @damId, @sourceFile,
-          @confidence, @verified, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+          @markersJson, @confidence, @verified, strftime('%Y-%m-%dT%H:%M:%fZ','now'))
   ON CONFLICT(id) DO UPDATE SET
     ring = excluded.ring,
     ring_normalised = excluded.ring_normalised,
@@ -122,6 +130,7 @@ const upsertStmt = db.prepare(`
     sire_id = excluded.sire_id,
     dam_id = excluded.dam_id,
     source_file = excluded.source_file,
+    markers_json = excluded.markers_json,
     confidence = excluded.confidence,
     verified = excluded.verified,
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ','now')
@@ -143,6 +152,7 @@ export function saveBird(bird: Bird): void {
     sireId: bird.sireId ?? null,
     damId: bird.damId ?? null,
     sourceFile: bird.sourceFile ?? null,
+    markersJson: bird.markers ? JSON.stringify(bird.markers) : null,
     confidence: bird.confidence,
     verified: bird.verified ? 1 : 0,
   });
